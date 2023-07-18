@@ -1,6 +1,6 @@
 package com.itheima.search;
 
-public class A04_BlockSearchDemo {
+public class A05_BlockSearchDemo2 {
     public static void main(String[] args) {
         /*
             分块查找
@@ -11,43 +11,47 @@ public class A04_BlockSearchDemo {
                 2.先查找blockArr确定要查找的数据属于哪一块
                 3.再单独遍历这一块数据即可
         */
-        int[] arr = {16, 5, 9, 12, 21, 18,
-                32, 23, 37, 26, 45, 34,
-                50, 48, 61, 52, 73, 66};
+        int[] arr = {27, 22, 30, 40, 36,
+                13, 19, 16, 20,
+                7, 10,
+                43, 50, 48};
 
-        Block b1 = new Block(21, 0, 5);
-        Block b2 = new Block(45, 6, 11);
-        Block b3 = new Block(73, 12, 17);
+        Block2 b1 = new Block2(40, 22, 0, 4);
+        Block2 b2 = new Block2(20, 13, 5, 8);
+        Block2 b3 = new Block2(10, 7, 9, 10);
+        Block2 b4 = new Block2(50, 43, 11, 13);
 
-        Block[] blockArr = {b1, b2, b3};
-        int number = 23;
+
+        Block2[] blockArr = {b1, b2, b3, b4};
+        int number = 19;
         int index = getIndex(blockArr, arr, number);
         System.out.println(index);
     }
 
-    private static int getIndex(Block[] blockArr, int[] arr, int number) {
+    private static int getIndex(Block2[] blockArr, int[] arr, int number) {
 
         int indexBlock = findIndexBlock(blockArr, number);
-        if(indexBlock==-1){
+        if (indexBlock == -1) {
             return -1;
         }
         int start = blockArr[indexBlock].getStart();
         int end = blockArr[indexBlock].getEnd();
         for (int i = start; i <= end; i++) {
-            if(arr[i]==number){
+            if (arr[i] == number) {
                 return i;
             }
         }
         return -1;
     }
 
-    private static int findIndexBlock(Block[] blockArr, int num) {
+    private static int findIndexBlock(Block2[] blockArr, int num) {
 
         for (int i = 0; i < blockArr.length; i++) {
-            if (num <= blockArr[i].getMax()) {
+            if (num <= blockArr[i].getMax() && num >= blockArr[i].getMin()) {
                 return i;
             }
         }
         return -1;
     }
 }
+
