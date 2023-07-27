@@ -1,38 +1,34 @@
 package com.itheima.ui;
 
-import com.itheima.pojo.User;
-import com.itheima.util.CheckUtil;
+import cn.hutool.core.io.FileUtil;
+import com.itheima.domain.User;
 import com.itheima.util.CodeUtil;
 
 import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.List;
 
 public class LoginJFrame extends JFrame implements MouseListener {
-    //创建一个集合存储正确的用户名和密码
-    static ArrayList<User> list = new ArrayList<>();
 
-    static {
-        list.add(new User("zhangsan", "123"));
-        list.add(new User("lisi", "1234"));
-    }
+    ArrayList<User> allUsers = new ArrayList<>();
+
 
     JButton login = new JButton();
-
     JButton register = new JButton();
 
     JTextField username = new JTextField();
-
-    JTextField password = new JTextField();
-
+    //JTextField password = new JTextField();
+    JPasswordField password = new JPasswordField();
     JTextField code = new JTextField();
 
-    String codeStr;
-
+    //正确的验证码
     JLabel rightCode = new JLabel();
 
     public LoginJFrame() {
+
+        readUserInfo();
         //初始化界面
         initJFrame();
 
@@ -41,6 +37,19 @@ public class LoginJFrame extends JFrame implements MouseListener {
 
         //让当前界面显示出来
         this.setVisible(true);
+    }
+
+    private void readUserInfo() {
+        List<String> userInfoStrList = FileUtil.readUtf8Lines("../../../puzzlegame/userinfo.txt");
+        for (String str : userInfoStrList) {
+            String[] userInfoArr = str.split("&");
+            String[] arr1 = userInfoArr[0].split("=");
+            String[] arr2 = userInfoArr[1].split("=");
+            String[] arr3 = userInfoArr[2].split("=");
+            User user = new User(arr1[1],arr2[1],Integer.parseInt(arr3[1]));
+            allUsers.add(user);
+        }
+        System.out.println(allUsers);
     }
 
     public void initView() {
@@ -60,7 +69,6 @@ public class LoginJFrame extends JFrame implements MouseListener {
         this.getContentPane().add(passwordText);
 
         //4.密码输入框
-
         password.setBounds(195, 195, 200, 30);
         this.getContentPane().add(password);
 
@@ -70,48 +78,47 @@ public class LoginJFrame extends JFrame implements MouseListener {
         this.getContentPane().add(codeText);
 
         //验证码的输入框
-
         code.setBounds(195, 256, 100, 30);
+        code.addMouseListener(this);
         this.getContentPane().add(code);
 
-        codeStr = CodeUtil.getCode();
 
+        String codeStr = CodeUtil.getCode();
         //设置内容
         rightCode.setText(codeStr);
+        //绑定鼠标事件
+        rightCode.addMouseListener(this);
         //位置和宽高
         rightCode.setBounds(300, 256, 50, 30);
-
-        rightCode.addMouseListener(this);
         //添加到界面
         this.getContentPane().add(rightCode);
 
         //5.添加登录按钮
-
         login.setBounds(123, 310, 128, 47);
         login.setIcon(new ImageIcon("puzzlegame/image/login/登录按钮.png"));
-        //去除按钮的默认边框
+        //去除按钮的边框
         login.setBorderPainted(false);
-        //去除按钮的默认背景
+        //去除按钮的背景
         login.setContentAreaFilled(false);
-
+        //给登录按钮绑定鼠标事件
         login.addMouseListener(this);
         this.getContentPane().add(login);
 
         //6.添加注册按钮
         register.setBounds(256, 310, 128, 47);
         register.setIcon(new ImageIcon("puzzlegame/image/login/注册按钮.png"));
-        //去除按钮的默认边框
+        //去除按钮的边框
         register.setBorderPainted(false);
-        //去除按钮的默认背景
+        //去除按钮的背景
         register.setContentAreaFilled(false);
-
+        //给注册按钮绑定鼠标事件
         register.addMouseListener(this);
         this.getContentPane().add(register);
-
         //7.添加背景图片
         JLabel background = new JLabel(new ImageIcon("puzzlegame/image/login/background.png"));
         background.setBounds(0, 0, 470, 390);
         this.getContentPane().add(background);
+
     }
 
 
@@ -125,7 +132,87 @@ public class LoginJFrame extends JFrame implements MouseListener {
     }
 
 
-    //要展示用户名或密码错误
+
+    //点击
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (e.getSource() == login) {
+            System.out.println("点击了登录按钮");
+            //获取两个文本输入框中的内容
+            String usernameInput = username.getText();
+            String passwordInput = password.getText();
+            //获取用户输入的验证码
+            String codeInput = code.getText();
+
+            //创建一个User对象
+            User userInfo = new User(usernameInput, passwordInput);
+            System.out.println("用户输入的用户名为" + usernameInput);
+            System.out.println("用户输入的密码为" + passwordInput);
+
+            if (codeInput.length() == 0) {
+                showJDialog("验证码不能为空");
+            } else if (usernameInput.length() == 0 || passwordInput.length() == 0) {
+                //校验用户名和密码是否为空
+                System.out.println("用户名或者密码为空");
+
+                //调用showJDialog方法并展示弹框
+                showJDialog("用户名或者密码为空");
+
+
+            } else if (!codeInput.equalsIgnoreCase(rightCode.getText())) {
+                showJDialog("验证码输入错误");
+            } else if (!containsUsername(usernameInput)) {
+                showJDialog("用户名不存在");
+            } else if(checkPassword(userInfo)){
+                System.out.println("用户名和密码正确可以开始玩游戏了");
+                //关闭当前登录界面
+                this.setVisible(false);
+                //打开游戏的主界面
+                //需要把当前登录的用户名传递给游戏界面
+                new GameJFrame();
+            }
+        } else if (e.getSource() == register) {
+            System.out.println("点击了注册按钮");
+
+            this.setVisible(false);
+            new RegisterJFrame(allUsers);
+        } else if (e.getSource() == rightCode) {
+            System.out.println("更换验证码");
+            //获取一个新的验证码
+            String code = CodeUtil.getCode();
+            rightCode.setText(code);
+        }
+    }
+
+    private boolean checkPassword(User userInfo) {
+        for (User user : allUsers) {
+            if(user.getUsername().equals(userInfo.getUsername())){
+                int count = user.getCount();
+                if(user.getPassword().equals(userInfo.getPassword())&&count<3){
+                    showJDialog("登录成功");
+                    user.setCount(0);
+                    FileUtil.writeLines(allUsers,"../../../puzzlegame/userinfo.txt","UTF-8");
+                    return true;
+                }
+                else {
+                    count++;
+                    if(count<3){
+                        showJDialog("登录失败，还剩下"+(3-count)+"次机会");
+                    }
+                    else {
+                        showJDialog("账号被锁定，请联系管理员");
+                    }
+                    user.setCount(count);
+                    FileUtil.writeLines(allUsers,"../../../puzzlegame/userinfo.txt","UTF-8");
+
+                }
+
+            }
+        }
+        return false;
+    }
+
+
     public void showJDialog(String content) {
         //创建一个弹框对象
         JDialog jDialog = new JDialog();
@@ -147,83 +234,48 @@ public class LoginJFrame extends JFrame implements MouseListener {
         jDialog.setVisible(true);
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-
-    }
-
+    //按下不松
     @Override
     public void mousePressed(MouseEvent e) {
-        Object source = e.getSource();
-        if (source == login) {
+        if (e.getSource() == login) {
             login.setIcon(new ImageIcon("puzzlegame/image/login/登录按下.png"));
-        } else if (source == register) {
-            login.setIcon(new ImageIcon("puzzlegame/image/login/注册按下.png"));
+        } else if (e.getSource() == register) {
+            register.setIcon(new ImageIcon("puzzlegame/image/login/注册按下.png"));
         }
     }
 
+
+    //松开按钮
     @Override
     public void mouseReleased(MouseEvent e) {
-
-        Object source = e.getSource();
-        if(source == login){
+        if (e.getSource() == login) {
             login.setIcon(new ImageIcon("puzzlegame/image/login/登录按钮.png"));
-
-                String usernameText = username.getText();
-                String passwordText = password.getText();
-                String codeText = code.getText();
-
-                if(!codeText.equals(codeStr)){
-                    showJDialog("验证码错误");
-                    username.setText("");
-                    password.setText("");
-                    code.setText("");
-                    codeStr = CodeUtil.getCode();
-                    rightCode.setText(codeStr);
-                    return;
-                }
-                if("".equals(usernameText)||"".equals(passwordText)){
-
-                    showJDialog("用户名或密码不能为空");
-                    username.setText("");
-                    password.setText("");
-                    code.setText("");
-                    codeStr = CodeUtil.getCode();
-                    rightCode.setText(codeStr);
-                    return;
-                }
-                if(CheckUtil.check(list,usernameText,passwordText)){
-                    showJDialog("登录成功");
-                    this.setVisible(false);
-                    new GameJFrame();
-                }
-                else {
-                    showJDialog("用户名或密码错误");
-
-                    username.setText("");
-                    password.setText("");
-                    code.setText("");
-                    codeStr = CodeUtil.getCode();
-                    rightCode.setText(codeStr);
-                }
-
-
-        }else if(source==register){
-            login.setIcon(new ImageIcon("puzzlegame/image/login/注册按钮.png"));
-        }else if(source==rightCode){
-            codeStr = CodeUtil.getCode();
-            rightCode.setText(codeStr);
+        } else if (e.getSource() == register) {
+            register.setIcon(new ImageIcon("puzzlegame/image/login/注册按钮.png"));
         }
-
     }
 
+    //鼠标划入
     @Override
     public void mouseEntered(MouseEvent e) {
 
     }
 
+    //鼠标划出
     @Override
     public void mouseExited(MouseEvent e) {
 
     }
+
+    //判断用户在集合中是否存在
+    private boolean containsUsername(String username) {
+        for (User user : allUsers) {
+            if(username.equals(user.getUsername())){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }
